@@ -1,6 +1,13 @@
-# pick-and-place-robot-challenge-REC-Task-2
+## Repository Contents
 
-## Repository contains the following:
-**- Code to test the functionality of joystick module**: Using Arduino ESP-32 with two HW-504 joystick modules, this code is to test if the joystick module is able to print the direction of toggle in the x and y direction.
-**- Code to test the Bluetooth connectivity of the ESP-32 with the HC-05 and Arduino Nano**
-**-Code to execute the movement of the robot** : (Forward/Backward/Left/Right)
+This repository contains the source code and documentation for the **Pick-and-Place Robot Challenge (REC - Task 2)**. Below is an overview of the included modules:
+
+*   **Joystick Testing Module**
+    *   Designed for the **ESP32** microcontroller paired with dual **HW-504 joystick modules**.
+    *   Verifies and outputs real-time directional toggle readings along both the X and Y axes.
+
+*   **Bluetooth Connectivity Module**
+    *   Tests reliable wireless communication and pairing between the **ESP32**, the **HC-05 Bluetooth module**, and the **Arduino Nano**.
+
+*   **Robot Movement Control**
+    *   Executes core directional navigation commands (**Forward, Backward, Left, and Right**) for the robot chassis.
