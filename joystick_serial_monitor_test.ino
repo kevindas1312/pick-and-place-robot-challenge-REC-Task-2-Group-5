@@ -27,7 +27,7 @@ void loop() {
   bool j1_pressed = digitalRead(J1_SW) == LOW;
   bool j2_pressed = digitalRead(J2_SW) == LOW;
 
-  // Print results matching your format
+  // Print results
   Serial.print("LEFT  [X: "); Serial.print(j1_x);
   Serial.print(", Y: "); Serial.print(j1_y);
   Serial.print(", Btn: "); Serial.print(j1_pressed ? "PRESSED" : "OPEN");
