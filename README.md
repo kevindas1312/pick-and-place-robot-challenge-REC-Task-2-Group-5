@@ -1,6 +1,6 @@
 ## Repository Contents
 
-This repository contains the source code and documentation for the **Pick-and-Place Robot Challenge (REC - Task 2)**. Below is an overview of the included modules:
+This repository contains the source code and documentation for the **Pick-and-Place Robot Challenge (REC - Task 2)** for **Group 5**. Below is an overview of the included modules:
 
 *   **Joystick Testing Module**
     *   Designed for the **ESP32** microcontroller paired with dual **HW-504 joystick modules**.
