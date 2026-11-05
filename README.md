@@ -1,3 +1,13 @@
+## Documentation
+
+| Document | What it's for |
+| --- | --- |
+| **`GUIDE.md`** | **Start here.** Plain-English explanation of every line of all three sketches, plus step-by-step instructions for flashing the boards and the first power-up test. No prior Arduino experience assumed. |
+| `README.md` (this file) | Quick reference: pin tables, wire protocol, safety notes. |
+| `hardware/schematic_rev1.1.png` | The corrected wiring diagram. Every pin name in the code matches it. |
+
+---
+
 ## Repository Contents
 
 This repository contains the source code and documentation for the **Pick-and-Place Robot Challenge (REC - Task 2)** for **Group 5**. Below is an overview of the included modules:
