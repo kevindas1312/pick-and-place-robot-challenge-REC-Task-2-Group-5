@@ -2,7 +2,8 @@
 
 | Document | What it's for |
 | --- | --- |
-| **`GUIDE.md`** | **Start here.** Plain-English explanation of every line of all three sketches, plus step-by-step instructions for flashing the boards and the first power-up test. No prior Arduino experience assumed. |
+| **`OVERVIEW.md`** | What the project is, what it can and cannot do, and the **operator's manual** — how to hold the controller and drive it. Read this first to understand the product. |
+| **`GUIDE.md`** | **Start here if you're touching code.** Plain-English explanation of every line of all three sketches, flashing steps, front-panel gestures and first power-up tests. |
 | `README.md` (this file) | Quick reference: pin tables, wire protocol, safety notes. |
 | `hardware/schematic_rev1.1.png` | The corrected wiring diagram. Every pin name in the code matches it. |
 

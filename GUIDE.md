@@ -28,6 +28,10 @@ Keep these open next to it:
 11. [The knobs you are allowed to turn](#11-the-knobs-you-are-allowed-to-turn)
 12. [Glossary](#12-glossary)
 
+> **Just want to know how to drive it?** Jump straight to
+> **[section 5, Part 9 — the gesture-to-motion cheat sheet](#part-9--the-gesture-to-motion-cheat-sheet)**,
+> which shows every stick movement and what the robot does.
+
 ---
 
 ## 1. The 30-second version
@@ -582,6 +586,184 @@ when you move a stick, slow enough that the Bluetooth link is never overwhelmed.
 
 It also does a second job — it is the **heartbeat**. The robot uses "have I heard anything
 lately?" to decide whether the link is still alive. See section 6, Part 4.
+
+
+### Part 9 — The gesture-to-motion cheat sheet
+
+This part is not about code. It is about **your hands**. For every way you can move the sticks, here
+is the letter that gets sent and what the robot physically does.
+
+#### How to read the doodles
+
+| Symbol | Means |
+| --- | --- |
+| `^` | push the stick **away** from you (forward) |
+| `v` | pull the stick **toward** you (back) |
+| `<` / `>` | push the stick **left** / **right** |
+| `o` | leave the stick **centred and untouched** |
+| `[CLICK]` | press the top of the stick down |
+
+"**Nose**" below means the front of the robot — the end with the claw.
+
+#### Driving
+
+```text
+   F  FORWARD                          B  BACKWARD
+
+   +-----+    +-----+                  +-----+    +-----+
+   |  ^  |    |  ^  |                  |  v  |    |  v  |
+   +-----+    +-----+                  +-----+    +-----+
+    left       right                   left       right
+
+   Both wheels roll forward.           Both wheels roll backward.
+   The robot drives straight ahead.    The robot reverses straight back.
+```
+
+```text
+   L  CURVE LEFT                       R  CURVE RIGHT
+
+   +-----+    +-----+                  +-----+    +-----+
+   |  <  |    |  o  |                  |  >  |    |  o  |
+   +-----+    +-----+                  +-----+    +-----+
+    left       right                   left       right
+
+   The left wheel slows down, so       The right wheel slows down, so
+   the robot arcs to the left.         the robot arcs to the right.
+   (Either stick works - you can       (Either stick works - you can
+    use the right one instead.)         use the right one instead.)
+```
+
+Note that steering is **not** "turn the front wheels". There is no steering linkage at all — the
+robot turns purely because one side of it travels further than the other. That is why a "curve"
+command behaves differently from a "spin" command.
+
+#### Fine positioning — one wheel at a time
+
+These four are the most useful commands in the whole set, because they let you rotate the robot a
+few degrees without it driving away from the object.
+
+```text
+   W  LEFT WHEEL, FORWARD              X  LEFT WHEEL, BACKWARD
+
+   +-----+    +-----+                  +-----+    +-----+
+   |  ^  |    |  o  |                  |  v  |    |  o  |
+   +-----+    +-----+                  +-----+    +-----+
+    left       right                   left       right
+
+   The right wheel is off and free     The right wheel is off and free
+   to slide. The robot pivots on       to slide. The robot pivots on
+   that wheel:                         that wheel:
+   NOSE SWINGS RIGHT                   NOSE SWINGS LEFT
+```
+
+```text
+   Y  RIGHT WHEEL, FORWARD             Z  RIGHT WHEEL, BACKWARD
+
+   +-----+    +-----+                  +-----+    +-----+
+   |  o  |    |  ^  |                  |  o  |    |  v  |
+   +-----+    +-----+                  +-----+    +-----+
+    left       right                   left       right
+
+   The left wheel is off and free      The left wheel is off and free
+   to slide. The robot pivots on       to slide. The robot pivots on
+   that wheel:                         that wheel:
+   NOSE SWINGS LEFT                    NOSE SWINGS RIGHT
+```
+
+> Careful — this is the bit that trips everybody up. **"Left wheel forward" turns the robot
+> right**, the same way a tank with its left track running and its right track stopped pivots to
+> the right. It is not a bug and it is not backwards; it is just what happens when one side of a
+> skid-steer chassis outruns the other.
+
+#### Spinning on the spot
+
+```text
+   T  SPIN                             U  SPIN
+
+   +-----+    +-----+                  +-----+    +-----+
+   |  v  |    |  ^  |                  |  ^  |    |  v  |
+   +-----+    +-----+                  +-----+    +-----+
+    left       right                   left       right
+
+   Both wheels are powered, in         Both wheels are powered, in
+   opposite directions.                opposite directions.
+   NOSE SWINGS LEFT                    NOSE SWINGS RIGHT
+```
+
+`T` and `U` are the only two commands where both wheels are driven in opposite directions, so the
+robot rotates around its own centre without moving.
+
+#### The claw
+
+```text
+   O  OPEN THE CLAW                    C  CLOSE THE CLAW
+
+   +-----+    +-----+                  +-----+    +-----+
+   |  o  |    |  o  |                  |  o  |    |  o  |
+   +-----+    +-----+                  +-----+    +-----+
+   [CLICK]                             [CLICK]
+    left       right                   left       right
+
+   Press the LEFT stick's top.         Press the RIGHT stick's top.
+   Jaws open.                          Jaws close.
+```
+
+**You do not have to hold the button.** The servo travels to the new angle and stays there. A quick
+tap is enough — press, release, and the claw holds. Holding the button down just re-sends the same
+angle over and over.
+
+
+#### The complete reference
+
+All fourteen possible states. `●` means the stick is centred and untouched.
+
+| You do this | Letter | Left wheel | Right wheel | Nose swings | In one line |
+| --- | --- | --- | --- | --- | --- |
+| both sticks `^` | `F` | forward | forward | — | drives straight ahead |
+| both sticks `v` | `B` | backward | backward | — | reverses straight back |
+| either stick `<` | `L` | slow forward | full forward | left | arcs left while moving |
+| either stick `>` | `R` | full forward | slow forward | right | arcs right while moving |
+| left `^`, right `●` | `W` | forward | off | **right** | pivots on the right wheel |
+| left `v`, right `●` | `X` | backward | off | **left** | pivots on the right wheel |
+| right `^`, left `●` | `Y` | off | forward | **left** | pivots on the left wheel |
+| right `v`, left `●` | `Z` | off | backward | **right** | pivots on the left wheel |
+| left `v`, right `^` | `T` | backward | forward | left | spins on the spot |
+| left `^`, right `v` | `U` | forward | backward | right | spins on the spot |
+| `[CLICK]` left stick | `O` | (unchanged) | (unchanged) | — | claw opens |
+| `[CLICK]` right stick | `C` | (unchanged) | (unchanged) | — | claw closes |
+| nothing touched | `S` | off | off | — | stops |
+| anything unrecognised | — | off | off | — | fails safe, stops |
+
+#### What it actually feels like to drive
+
+Five things you will notice in the first minute, and none of them are faults:
+
+**1. There is a short lag.** About a tenth of a second between your thumb moving and the wheels
+reacting. It feels a little like driving on ice. Learn to lead the robot slightly and stop a
+moment before you think you need to.
+
+**2. Nothing happens until you push about a quarter of the way.** That is the dead zone. It is what
+stops the robot twitching every time your thumb relaxes. Push decisively rather than gently.
+
+**3. Letting go means stop.** The sticks are spring-loaded and centre themselves, which sends `S`.
+You never need a separate "brake" gesture.
+
+**4. It coasts.** There are no brakes, only "stop powering the motors". At full speed on a smooth
+floor the robot will roll on for a short distance. On a low-friction surface, expect more.
+
+**5. One stick forward does not mean "go forward".** This is the number-one beginner surprise: the
+robot only drives straight when **both** sticks are pushed the same way. Pushing one stick gives you
+`W`, `X`, `Y` or `Z` — a pivot on one wheel — and the robot will rotate instead of advancing.
+
+#### The five mistakes everybody makes first
+
+| What you try | What actually happens | Do this instead |
+| --- | --- | --- |
+| Push the left stick forward and expect it to go forward | `W` — it pivots on the right wheel and swings right | push **both** sticks forward |
+| Push a stick forward-and-to-the-side for a curve | the sideways part is ignored — steering is only read when X is centred | drive straight, stop, then steer |
+| Hold the claw button down for a second "to make sure" | pointless — the angle is already set | tap it once |
+| Expect it to stop dead | it coasts | stop earlier than feels natural |
+| Lean a finger on the other stick | a light touch is fine (dead zone), a firm one cancels your command | keep the other hand clear |
 
 
 ---
