@@ -1,4 +1,8 @@
 #include "BluetoothSerial.h"
+//Pick & Place Robot  - REC Task 2 - Group 5
+#if __has_include("esp_arduino_version.h")
+#include "esp_arduino_version.h"
+#endif
 
 #if !defined(CONFIG_BT_ENABLED)
 #error "Bluetooth support is missing from this ESP32 build (CONFIG_BT_ENABLED undefined). Use a full ESP32 core for a board that has Classic Bluetooth."
@@ -10,7 +14,7 @@ BluetoothSerial SerialBT;
 
 // Name the HC-05 broadcasts (set with AT+NAME on the module). Keep both in sync
 // if you ever rename it from the factory default.
-const char* BT_SLAVE_NAME = "HC-05";
+const char* BT_SLAVE_NAME = "module4";
 
 // Joystick 1 (Left) Pins
 const int J1_VRX = 32;
@@ -40,7 +44,13 @@ inline bool isNeutral(int v)  { return v >= AXIS_LOW && v <= AXIS_HIGH; }
 
 void setup() {
   Serial.begin(115200);
+  #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
+  SerialBT.setPin("1234", 4);
+  #else
+  SerialBT.setPin("1234");
+  #endif
   
+
   // If your HC-05 asks for a PIN other than the library default ("1234"),
   // set it BEFORE begin():  SerialBT.setPin("1234");
   // Initialize Bluetooth as Master (true enables master mode to initiate pairing)
@@ -63,7 +73,7 @@ void setup() {
 void attemptConnect() {
   lastConnectAttempt = millis();
 
-  if (SerialBT.connect(String(BT_SLAVE_NAME))) {
+  if (SerialBT.connect(BT_SLAVE_NAME)) {
     Serial.println("Connected to HC-05 Successfully!");
   } else {
     Serial.println("Failed to connect. Make sure the HC-05 is powered on and in range - retrying.");
