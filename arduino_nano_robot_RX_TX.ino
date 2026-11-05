@@ -13,12 +13,33 @@ const int IN4 = 2;  // Motor 2 direction
 // D9/D10 are left free because the Servo library owns Timer1.
 const int ENB = 11; // PWM speed pin for Motor 2 (Right) - Timer2A
 
-// Motor Speed (0 - 255)
-const int motorSpeed = 200;
+// ---- motor direction correction ---------------------------------------
+// If a wheel spins the wrong way and its leads are already soldered, flip the
+// matching flag here instead of resoldering. It only swaps which pin goes HIGH,
+// so speed, braking and the fail-safe stop are all unaffected.
+//
+// How to tell which one: drive with BOTH sticks forward. The robot should roll
+// straight ahead. Any wheel travelling backwards is the reversed one.
+const bool LEFT_MOTOR_REVERSED  = true;   // left wheel drives backwards -> true
+const bool RIGHT_MOTOR_REVERSED = false;  // right wheel drives backwards -> true
+
+// The pin levels that make each channel go FORWARD, derived from the flags
+// above. Everything else is written in terms of these, so a reversal is
+// corrected in exactly one place.
+const int L_FWD_A = LEFT_MOTOR_REVERSED  ? LOW  : HIGH;   // IN1 when going forward
+const int L_FWD_B = LEFT_MOTOR_REVERSED  ? HIGH : LOW;    // IN2 when going forward
+const int R_FWD_A = RIGHT_MOTOR_REVERSED ? LOW  : HIGH;   // IN3 when going forward
+const int R_FWD_B = RIGHT_MOTOR_REVERSED ? HIGH : LOW;    // IN4 when going forward
+
+// Motor Speed (0 - 255). Lower = slower and easier to control.
+// 150 is about 59 % duty. If the robot will not move at all, raise it; if it
+// still feels fast, try 120.
+const int motorSpeed = 150;
 
 // Turning: the inner wheel runs at this duty so the robot curves instead of
-// skidding in a circle.
-const int turnSpeed = 80;
+// skidding in a circle. Keep it roughly 55-65 % of motorSpeed, or the inner
+// wheel may stall against friction and the "curve" becomes a pivot.
+const int turnSpeed = 90;
 
 // Claw servo angles
 const int CLAW_NEUTRAL_DEG = 90;
@@ -134,75 +155,79 @@ void applyCommand(char dir, char claw) {
 }
 
 // --- Motor Control Functions ---
+// Direction is always expressed as +1 (forward), -1 (backward) or 0 (coast) and
+// translated to pin levels by these two helpers, so the LEFT_MOTOR_REVERSED /
+// RIGHT_MOTOR_REVERSED flags are applied in exactly one place.
+void setLeftWheel(int dir) {
+  if (dir > 0)       { digitalWrite(IN1, L_FWD_A); digitalWrite(IN2, L_FWD_B); }
+  else if (dir < 0)  { digitalWrite(IN1, L_FWD_B); digitalWrite(IN2, L_FWD_A); }
+  else               { digitalWrite(IN1, LOW);     digitalWrite(IN2, LOW);     }
+}
+
+void setRightWheel(int dir) {
+  if (dir > 0)       { digitalWrite(IN3, R_FWD_A); digitalWrite(IN4, R_FWD_B); }
+  else if (dir < 0)  { digitalWrite(IN3, R_FWD_B); digitalWrite(IN4, R_FWD_A); }
+  else               { digitalWrite(IN3, LOW);     digitalWrite(IN4, LOW);     }
+}
+
 void moveForward() {
   analogWrite(ENA, motorSpeed);
   analogWrite(ENB, motorSpeed);
-  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
-  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+  setLeftWheel(+1); setRightWheel(+1);
 }
 
 void moveBackward() {
   analogWrite(ENA, motorSpeed);
   analogWrite(ENB, motorSpeed);
-  digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);
-  digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH);
+  setLeftWheel(-1); setRightWheel(-1);
 }
 
 void turnLeft() {
   analogWrite(ENA, turnSpeed);   // left wheel slower -> curves left
   analogWrite(ENB, motorSpeed);
-  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
-  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+  setLeftWheel(+1); setRightWheel(+1);
 }
 
 void turnRight() {
   analogWrite(ENA, motorSpeed);
   analogWrite(ENB, turnSpeed);   // right wheel slower -> curves right
-  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
-  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+  setLeftWheel(+1); setRightWheel(+1);
 }
 
 void spinSpot() {
   analogWrite(ENA, motorSpeed);
   analogWrite(ENB, motorSpeed);
-  digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);    // left wheel backwards
-  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);    // right wheel forwards
+  setLeftWheel(-1); setRightWheel(+1);   // left back, right forward
 }
 
 // 'U': the opposite in-place rotation (left forwards, right backwards)
 void spinSpotCounter() {
   analogWrite(ENA, motorSpeed);
   analogWrite(ENB, motorSpeed);
-  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);    // left wheel forwards
-  digitalWrite(IN3, LOW);  digitalWrite(IN4, HIGH);   // right wheel backwards
+  setLeftWheel(+1); setRightWheel(-1);
 }
 
 void leftMotorForward() {
   analogWrite(ENA, motorSpeed); analogWrite(ENB, 0);
-  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
-  digitalWrite(IN3, LOW);  digitalWrite(IN4, LOW);
+  setLeftWheel(+1); setRightWheel(0);   // right wheel coasts
 }
 
 void leftMotorBackward() {
   analogWrite(ENA, motorSpeed); analogWrite(ENB, 0);
-  digitalWrite(IN1, LOW);  digitalWrite(IN2, HIGH);
-  digitalWrite(IN3, LOW);  digitalWrite(IN4, LOW);
+  setLeftWheel(-1); setRightWheel(0);
 }
 
 void rightMotorForward() {
   analogWrite(ENA, 0); analogWrite(ENB, motorSpeed);
-  digitalWrite(IN1, LOW);  digitalWrite(IN2, LOW);
-  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+  setLeftWheel(0); setRightWheel(+1);   // left wheel coasts
 }
 
 void rightMotorBackward() {
   analogWrite(ENA, 0); analogWrite(ENB, motorSpeed);
-  digitalWrite(IN1, LOW);  digitalWrite(IN2, LOW);
-  digitalWrite(IN3, LOW);  digitalWrite(IN4, HIGH);
+  setLeftWheel(0); setRightWheel(-1);
 }
 
 void stopMotors() {
   analogWrite(ENA, 0); analogWrite(ENB, 0);
-  digitalWrite(IN1, LOW); digitalWrite(IN2, LOW);
-  digitalWrite(IN3, LOW); digitalWrite(IN4, LOW);
+  setLeftWheel(0); setRightWheel(0);
 }
