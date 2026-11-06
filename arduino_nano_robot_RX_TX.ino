@@ -6,56 +6,37 @@ const int IN1 = 5;  // Motor 1 direction
 const int IN2 = 4;  // Motor 1 direction
 const int IN3 = 3;  // Motor 2 direction
 const int IN4 = 2;  // Motor 2 direction
-// PWM speed pin for Motor 2 (Right). This MUST be a PWM-capable pin: on the
-// ATmega328P only D3, D5, D6, D9, D10 and D11 are, and analogWrite() on any
-// other pin just switches it fully on/off. It used to be D7, which is not PWM,
-// so the right wheel ignored motorSpeed and "slow turn" became "wheel stopped".
-// D9/D10 are left free because the Servo library owns Timer1.
+
 const int ENB = 11; // PWM speed pin for Motor 2 (Right) - Timer2A
 
 // ---- motor direction correction ---------------------------------------
-// If a wheel spins the wrong way and its leads are already soldered, flip the
-// matching flag here instead of resoldering. It only swaps which pin goes HIGH,
-// so speed, braking and the fail-safe stop are all unaffected.
-//
-// How to tell which one: drive with BOTH sticks forward. The robot should roll
-// straight ahead. Any wheel travelling backwards is the reversed one.
-// Both wheels ran backwards for forward commands after the breadboard wiring
-// correction. Reverse both channels relative to the previous firmware settings.
+
 const bool LEFT_MOTOR_REVERSED  = true;
 const bool RIGHT_MOTOR_REVERSED = false;
 
-// The pin levels that make each channel go FORWARD, derived from the flags
-// above. Everything else is written in terms of these, so a reversal is
-// corrected in exactly one place.
+// The pin levels that make each channel go FORWARD, derived from the flags above. 
 const int L_FWD_A = LEFT_MOTOR_REVERSED  ? LOW  : HIGH;   // IN1 when going forward
 const int L_FWD_B = LEFT_MOTOR_REVERSED  ? HIGH : LOW;    // IN2 when going forward
 const int R_FWD_A = RIGHT_MOTOR_REVERSED ? LOW  : HIGH;   // IN3 when going forward
 const int R_FWD_B = RIGHT_MOTOR_REVERSED ? HIGH : LOW;    // IN4 when going forward
 
 // Motor Speed (0 - 255). Lower = slower and easier to control.
-// 100 is about 39.21 % duty. If the robot will not move at all, raise it; if it
-// still feels fast, try 80.
+// 150 is about 39.21 % duty. If the robot will not move at all, raise it; if it still feels fast, try 120.
 const int motorSpeed = 100;
 
-// Turning: the inner wheel runs at this duty so the robot curves instead of
-// skidding in a circle. Keep it roughly 55-65 % of motorSpeed, or the inner
-// wheel may stall against friction and the "curve" becomes a pivot.
+// Keep it roughly 55-65 % of motorSpeed, or the inner wheel may stall against friction and the "curve" becomes a pivot.
 const int turnSpeed = 65;
 
 // Claw servo angles
 const int CLAW_NEUTRAL_DEG = 90;
-const int CLAW_OPEN_DEG    = 160;
+const int CLAW_OPEN_DEG    = 150;
 const int CLAW_CLOSE_DEG   = 20;
 
-// Link supervision: the ESP32 sends a packet every 100 ms, so this only has to
-// cover a few missed packets. Keep it well above the ESP32's send interval.
+// Link supervision: the ESP32 sends a packet every 100 ms, so this only has to cover a few missed packets. Keep it well above the ESP32's send interval.
 const unsigned long LINK_TIMEOUT_MS = 500;
 unsigned long lastPacketMs = 0;
 
-// Set to 1 to echo every received packet on the serial monitor.
-// Keep it 0 while driving: each print blocks ~50 ms at 9600 baud and starves
-// the Bluetooth receive buffer.
+// Set to 1 to echo every received packet on the serial monitor. Keep it 0 while driving: each print blocks ~50 ms at 9600 baud and starves the Bluetooth receive buffer.
 #define DEBUG_SERIAL 0
 
 // Incoming frame buffer: <Direction><Claw> terminated by '\n'
@@ -94,9 +75,7 @@ void setup() {
 void loop() {
   serviceLink();
 
-  // Failsafe: the ESP32 sends a packet every 100 ms, so silence means the link
-  // is down (out of range, controller off, flat battery). Never keep driving on
-  // a stale command.
+  // Failsafe: the ESP32 sends a packet every 100 ms, so silence means the link is down (out of range, controller off, flat battery).
   if (millis() - lastPacketMs > LINK_TIMEOUT_MS) {
     stopMotors();
   }
