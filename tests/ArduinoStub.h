@@ -1,4 +1,7 @@
 #pragma once
+#include <stddef.h>
+#include "freertos/task.h"
+extern "C" int snprintf(char*, size_t, const char*, ...);
 using uint8_t = unsigned char;
 using String = const char*;
 const int LOW = 0, HIGH = 1, OUTPUT = 1, INPUT_PULLUP = 2;
@@ -14,9 +17,15 @@ void analogWrite(int pin, int value) { pwmPins[pin] = value; }
 struct SerialStub {
   const char* input;
   int position;
+  char lastDiagnostic[256] = {};
+  int diagnosticLines = 0;
   void begin(int) {}
   template<typename T> void print(T) {}
   template<typename T> void println(T) {}
+  template<typename... Args> void printf(const char* format, Args... args) {
+    snprintf(lastDiagnostic, sizeof(lastDiagnostic), format, args...);
+    ++diagnosticLines;
+  }
   int available() { return input && input[position]; }
   char read() { return input[position++]; }
   void feed(const char* bytes) { input = bytes; position = 0; }

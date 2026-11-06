@@ -7,9 +7,13 @@ struct BluetoothSerial {
   int packets = 0;
   char direction = 0, claw = 0;
   char frame[16] = {};
+  void (*onConnect)() = nullptr;
   void setPin(const char*, int = 0) {}
   void begin(const char*, bool) {}
-  bool connect(const char*) { return connected; }
+  bool connect(const char*) {
+    if (onConnect) onConnect();
+    return connected;
+  }
   bool hasClient() { return connected; }
   void printf(const char* format, char dir, char target) {
     ++packets; direction = dir; claw = target;

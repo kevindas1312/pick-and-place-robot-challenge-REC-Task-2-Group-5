@@ -122,17 +122,37 @@ and pulling it back prints `Z`. If forward instead prints `Z`, the right
 stick's axis orientation also needs checking; report its raw X readings.
 Bluetooth pairing, reconnect logic, frame format and send interval are unchanged.
 
-Claw buttons are sampled continuously with a 20 ms debounce, independently
-of the 100 ms Bluetooth heartbeat. A press sets a remembered target: left
+Claw buttons are sampled by a dedicated ESP32 task, targeting a 5 ms sampling
+interval with a 20 ms debounce, independently of the 100 ms Bluetooth heartbeat.
+The task starts before Bluetooth initialization and keeps sampling during
+blocking connection attempts. Previously, sampling in `loop()` paused during
+those attempts and could miss an entire click. A press sets a remembered target: left
 opens, right closes, and releasing holds that target. A new press overrides
 a held button; simultaneous presses prefer open. The controller repeats the
 target in subsequent packets so one missed packet does not lose the command.
 `N` is sent until the first button press. This supersedes the older button
 sampling examples in GUIDE.md.
 
+Every accepted press now prints a `CLAW:` event at **115200 baud**, even with
+the HC-05 off. For separate left/right clicks, expect:
+
+```text
+CLAW: left=PRESSED right=RELEASED -> OPEN (O)
+CLAW: left=RELEASED right=PRESSED -> CLOSE (C)
+```
+
+These messages mean a button command was accepted locally, not that the robot
+received it. Once connected, the last target is included in the regular packets.
+The heartbeat's raw button display now says `RELEASED` instead of `OPEN` to
+avoid confusing switch state with claw position. A short click can be released
+before that display updates; the `CLAW:` event records its detection.
+
 Run host regression checks with `python3 tests/run_tests.py` (requires `g++`,
 or set `CXX` to a C++ compiler). These execute both sketches with simulated
 Arduino I/O; they do not compile the board libraries or verify the hardware.
+The blocking-connection regression simulates background button samples during
+startup and reconnection while `loop()` cannot run, checking both event logs
+and the next transmitted claw command. It does not emulate FreeRTOS scheduling.
 The integration check passes the controller's formatted packet bytes into
 the Nano parser and checks the resulting servo angles and right motor outputs.
 
@@ -151,10 +171,10 @@ Use these checks to locate the failure before changing pins or angles:
 
 1. With both sticks centred, open the ESP32 Serial Monitor at **115200** baud.
    Click the left stick down (its push-button, not its directional axis),
-   then release and click the right stick. Expect `Btn: PRESSED` on the
-   corresponding side and packets `SO` then `SC`. Hold each click for half
-   a second so its raw button state is visible in the monitor.
-2. If a button never shows `PRESSED`, check its `SW` connection to GPIO25
+   then release and click the right stick. Expect the `CLAW:` events above,
+   and, when connected, packets `SO` then `SC`. Hold each click for half
+   a second to also see `Btn: PRESSED` in the heartbeat display.
+2. If a button never produces a `CLAW:` event, check its `SW` connection to GPIO25
    (left) or GPIO26 (right) and the joystick's common ground. Simultaneously
    clicking both requests open; it is not an open/close toggle.
 3. If the controller sends `SO`/`SC`, temporarily enable `DEBUG_SERIAL` in
@@ -167,5 +187,5 @@ Use these checks to locate the failure before changing pins or angles:
    does not verify that the servo can reach 160 or 20 degrees under load.
 
 Report the ESP32 button states/packets and Nano received bytes if the fault
-persists. The right-motor correction does not claim to resolve this
-unreproduced claw fault.
+persists. The independent sampler fixes missed clicks during blocking operations;
+it cannot detect a switch whose signal never reaches the configured GPIO input.

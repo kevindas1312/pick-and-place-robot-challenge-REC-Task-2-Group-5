@@ -11,7 +11,7 @@ import tempfile
 
 root = Path(__file__).resolve().parent
 with tempfile.TemporaryDirectory(prefix="robot-tests-") as build:
-    for name in ("controller", "receiver", "integration"):
+    for name in ("controller", "controller_blocking", "receiver", "integration"):
         output = Path(build) / f"{name}.so"
         subprocess.run([
             os.environ.get("CXX", "g++"), "-std=c++11", "-Wall", "-Wextra",

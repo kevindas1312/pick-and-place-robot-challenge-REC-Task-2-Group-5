@@ -1,4 +1,6 @@
 #include "BluetoothSerial.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 //Pick & Place Robot  - REC Task 2 - Group 5
 #if __has_include("esp_arduino_version.h")
 #include "esp_arduino_version.h"
@@ -39,9 +41,10 @@ const unsigned long RECONNECT_INTERVAL_MS = 2000; // BT retry period
 unsigned long lastConnectAttempt = 0;
 unsigned long lastSendMs = 0;
 const unsigned long BUTTON_DEBOUNCE_MS = 20;
+const unsigned long BUTTON_SAMPLE_MS = 5;
 
-// Sample switches on every loop, independently of the packet timer. Remember
-// the requested position so a quick click is also sent in later heartbeats.
+// Only the button task owns these debounce states. It continues sampling while
+// Bluetooth begin/connect/write or USB diagnostics block the main Arduino task.
 struct ClawButton {
   int pin;
   bool rawPressed;
@@ -51,6 +54,7 @@ struct ClawButton {
 ClawButton openButton  = {J1_SW, false, false, 0};
 ClawButton closeButton = {J2_SW, false, false, 0};
 char clawTarget = 'N';
+portMUX_TYPE clawMux = portMUX_INITIALIZER_UNLOCKED;
 
 // Keep the custom type visible to Arduino's sketch preprocessor.
 bool buttonPressed(ClawButton &button, unsigned long now);
@@ -69,12 +73,60 @@ bool buttonPressed(ClawButton &button, unsigned long now) {
   return false;
 }
 
+void sampleClawButtons() {
+  unsigned long now = millis();
+  bool openPressed = buttonPressed(openButton, now);
+  bool closePressed = buttonPressed(closeButton, now);
+  if (!openPressed && !closePressed) return;
+
+  // Newest press wins, including when the other button remains held.
+  // Simultaneous accepted presses keep the existing open priority.
+  char target = openPressed ? 'O' : 'C';
+  portENTER_CRITICAL(&clawMux);
+  clawTarget = target;
+  portEXIT_CRITICAL(&clawMux);
+
+  // Log accepted events, not just the raw state at the next 100 ms heartbeat.
+  // This runs even while Bluetooth is disconnected or attempting to connect.
+  Serial.printf("CLAW: left=%s right=%s -> %s (%c)\n",
+                openButton.stablePressed ? "PRESSED" : "RELEASED",
+                closeButton.stablePressed ? "PRESSED" : "RELEASED",
+                target == 'O' ? "OPEN" : "CLOSE", target);
+}
+
+void clawButtonTask(void*) {
+  for (;;) {
+    sampleClawButtons();
+    // Always yield, even if an ESP32 build uses a tick longer than 5 ms.
+    const TickType_t ticks = pdMS_TO_TICKS(BUTTON_SAMPLE_MS);
+    vTaskDelay(ticks > 0 ? ticks : 1);
+  }
+}
+
+char readClawTarget() {
+  portENTER_CRITICAL(&clawMux);
+  char target = clawTarget;
+  portEXIT_CRITICAL(&clawMux);
+  return target;
+}
+
 inline bool pushedLow(int v)  { return v <  AXIS_LOW;  }
 inline bool pushedHigh(int v) { return v >  AXIS_HIGH; }
 inline bool isNeutral(int v)  { return v >= AXIS_LOW && v <= AXIS_HIGH; }
 
 void setup() {
   Serial.begin(115200);
+  // Start switch sampling BEFORE any potentially blocking Bluetooth operation.
+  pinMode(J1_SW, INPUT_PULLUP);
+  pinMode(J2_SW, INPUT_PULLUP);
+  Serial.printf("Claw switches: LEFT SW -> GPIO%d, RIGHT SW -> GPIO%d; press = LOW\n",
+                J1_SW, J2_SW);
+  if (xTaskCreate(clawButtonTask, "claw_buttons", 3072, nullptr, 1, nullptr) != pdPASS) {
+    Serial.println("ERROR: cannot start claw button task. Restart the controller.");
+    // Do not silently operate a controller whose claw controls are unavailable.
+    while (true) delay(1000);
+  }
+
   #if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
   SerialBT.setPin("1234", 4);
   #else
@@ -87,10 +139,6 @@ void setup() {
   // Initialize Bluetooth as Master (true enables master mode to initiate pairing)
   SerialBT.begin("ESP32_Controller", true);
   
-  // Configure switch pins with internal pull-ups
-  pinMode(J1_SW, INPUT_PULLUP);
-  pinMode(J2_SW, INPUT_PULLUP);
-
   Serial.println("ESP32 Controller Ready. Searching for HC-05...");
 
   // Attempt to connect to the HC-05. The name it broadcasts is set once with
@@ -113,12 +161,6 @@ void attemptConnect() {
 
 void loop() {
   unsigned long now = millis();
-  bool openPressed = buttonPressed(openButton, now);
-  bool closePressed = buttonPressed(closeButton, now);
-  // Newest press wins, even while the other switch remains held. If both
-  // become pressed together, open takes priority.
-  if (openPressed) clawTarget = 'O';
-  else if (closePressed) clawTarget = 'C';
 
   // Keep the SPP link alive. Without this, a connect that fails at boot (HC-05
   // powered up later, out of range, module rebooted) leaves the controller
@@ -189,16 +231,16 @@ void loop() {
   }
 
   // Repeat the last requested position so a missed packet cannot lose a click.
-  char claw = clawTarget;
+  char claw = readClawTarget();
 
   // Print results matching your exact format + Direction Text + Packet Sent
   Serial.print("LEFT  [X: "); Serial.print(j1_x);
   Serial.print(", Y: "); Serial.print(j1_y);
-  Serial.print(", Btn: "); Serial.print(j1_pressed ? "PRESSED" : "OPEN");
+  Serial.print(", Btn: "); Serial.print(j1_pressed ? "PRESSED" : "RELEASED");
   
   Serial.print("] | RIGHT [X: "); Serial.print(j2_x);
   Serial.print(", Y: "); Serial.print(j2_y);
-  Serial.print(", Btn: "); Serial.print(j2_pressed ? "PRESSED" : "OPEN");
+  Serial.print(", Btn: "); Serial.print(j2_pressed ? "PRESSED" : "RELEASED");
   Serial.print("] | Dir: "); Serial.print(dirText);
   Serial.print(" --> Packet: "); 
   Serial.print(direction); Serial.println(claw);

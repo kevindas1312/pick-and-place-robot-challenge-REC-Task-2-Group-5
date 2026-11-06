@@ -23,6 +23,7 @@ void rightMotorForward(); void rightMotorBackward(); void stopMotors();
 // Deliver the controller's formatted bytes to the real receiver parser.
 void tick(unsigned long time) {
   clockMs = time;
+  controller::sampleClawButtons();
   int previousPackets = controller::SerialBT.packets;
   controller::loop();
   if (controller::SerialBT.packets != previousPackets) {
