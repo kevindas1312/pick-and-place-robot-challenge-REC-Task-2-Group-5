@@ -68,7 +68,7 @@ Remove the `ENA`/`ENB` jumpers on the L298N so the PWM pins actually control the
 
 ## Bluetooth link
 
-1. Power the HC-05 and confirm its name with `AT+NAME?` (factory default `HC-05`; set it with `AT+NAME=`). That exact string must match `BT_SLAVE_NAME` in `controller_code_ESP32.ino`.
+1. Power the HC-05 and confirm its name with `AT+NAME?` (factory default `module4`; set it with `AT+NAME=`). That exact string must match `BT_SLAVE_NAME` in `controller_code_ESP32.ino`.
 2. Leave the HC-05 in **slave** mode at **9600** baud; the ESP32 runs in master mode and connects to it on boot.
 3. If the connection fails, the controller retries every 2 seconds - check the module is powered and in range.
 
