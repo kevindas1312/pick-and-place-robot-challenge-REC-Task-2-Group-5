@@ -20,9 +20,10 @@ const int ENB = 11; // PWM speed pin for Motor 2 (Right) - Timer2A
 //
 // How to tell which one: drive with BOTH sticks forward. The robot should roll
 // straight ahead. Any wheel travelling backwards is the reversed one.
-// Correct the reported left-wheel reversal with the current motor wiring.
-const bool LEFT_MOTOR_REVERSED  = false;
-const bool RIGHT_MOTOR_REVERSED = true;   // correct reported right-wheel reversal
+// Both wheels ran backwards for forward commands after the breadboard wiring
+// correction. Reverse both channels relative to the previous firmware settings.
+const bool LEFT_MOTOR_REVERSED  = true;
+const bool RIGHT_MOTOR_REVERSED = false;
 
 // The pin levels that make each channel go FORWARD, derived from the flags
 // above. Everything else is written in terms of these, so a reversal is

@@ -9,23 +9,26 @@ void rightMotorForward(); void rightMotorBackward(); void stopMotors();
 extern "C" int run_tests() {
   setup();
   Serial.feed("FO\n"); loop();
-  CHECK(digitalPins[IN1] == HIGH && digitalPins[IN2] == LOW);
-  CHECK(digitalPins[IN3] == LOW && digitalPins[IN4] == HIGH);
+  CHECK(digitalPins[IN1] == LOW && digitalPins[IN2] == HIGH);
+  CHECK(digitalPins[IN3] == HIGH && digitalPins[IN4] == LOW);
   CHECK(pwmPins[ENA] == motorSpeed && pwmPins[ENB] == motorSpeed);
   CHECK(clawServo.angle == CLAW_OPEN_DEG);
   Serial.feed("BC\n"); loop();
-  CHECK(digitalPins[IN1] == LOW && digitalPins[IN2] == HIGH);
-  CHECK(digitalPins[IN3] == HIGH && digitalPins[IN4] == LOW);
+  CHECK(digitalPins[IN1] == HIGH && digitalPins[IN2] == LOW);
+  CHECK(digitalPins[IN3] == LOW && digitalPins[IN4] == HIGH);
   CHECK(clawServo.angle == CLAW_CLOSE_DEG);
   Serial.feed("WN\n"); loop();
-  CHECK(digitalPins[IN1] == HIGH && digitalPins[IN2] == LOW);
+  CHECK(digitalPins[IN1] == LOW && digitalPins[IN2] == HIGH);
   CHECK(pwmPins[ENB] == 0 && clawServo.angle == CLAW_CLOSE_DEG);
+  Serial.feed("XN\n"); loop();
+  CHECK(digitalPins[IN1] == HIGH && digitalPins[IN2] == LOW);
+  CHECK(pwmPins[ENA] == motorSpeed && pwmPins[ENB] == 0);
   Serial.feed("YN\n"); loop();
   CHECK(pwmPins[ENA] == 0 && pwmPins[ENB] == motorSpeed);
-  CHECK(digitalPins[IN3] == LOW && digitalPins[IN4] == HIGH);
+  CHECK(digitalPins[IN3] == HIGH && digitalPins[IN4] == LOW);
   Serial.feed("ZN\n"); loop();
   CHECK(pwmPins[ENA] == 0 && pwmPins[ENB] == motorSpeed);
-  CHECK(digitalPins[IN3] == HIGH && digitalPins[IN4] == LOW);
+  CHECK(digitalPins[IN3] == LOW && digitalPins[IN4] == HIGH);
   // Movement and servo commands remain independent.
   const char directions[] = "FBLRTUWXYZS";
   for (int i = 0; directions[i]; ++i) {

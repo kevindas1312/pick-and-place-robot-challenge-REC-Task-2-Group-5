@@ -60,10 +60,31 @@ extern "C" int run_tests() {
   analogPins[controller::J2_VRX] = 4095; tick(start + 400);
   CHECK(controller::SerialBT.direction == 'Y');
   CHECK(pwmPins[receiver::ENA] == 0 && pwmPins[receiver::ENB] == receiver::motorSpeed);
-  CHECK(digitalPins[receiver::IN3] == LOW && digitalPins[receiver::IN4] == HIGH);
+  CHECK(digitalPins[receiver::IN3] == HIGH && digitalPins[receiver::IN4] == LOW);
   analogPins[controller::J2_VRX] = 0; tick(start + 500);
   CHECK(controller::SerialBT.direction == 'Z');
+  CHECK(digitalPins[receiver::IN3] == LOW && digitalPins[receiver::IN4] == HIGH);
+
+  // Left stick forward/reverse also reverses polarity. Right stays off.
+  analogPins[controller::J2_VRX] = 2048;
+  analogPins[controller::J1_VRX] = 4095; tick(start + 600);
+  CHECK(controller::SerialBT.direction == 'W');
+  CHECK(pwmPins[receiver::ENA] == receiver::motorSpeed && pwmPins[receiver::ENB] == 0);
+  CHECK(digitalPins[receiver::IN1] == LOW && digitalPins[receiver::IN2] == HIGH);
+  analogPins[controller::J1_VRX] = 0; tick(start + 700);
+  CHECK(controller::SerialBT.direction == 'X');
+  CHECK(digitalPins[receiver::IN1] == HIGH && digitalPins[receiver::IN2] == LOW);
+
+  analogPins[controller::J1_VRX] = analogPins[controller::J2_VRX] = 4095;
+  tick(start + 800);
+  CHECK(controller::SerialBT.direction == 'F');
+  CHECK(digitalPins[receiver::IN1] == LOW && digitalPins[receiver::IN2] == HIGH);
   CHECK(digitalPins[receiver::IN3] == HIGH && digitalPins[receiver::IN4] == LOW);
+  analogPins[controller::J1_VRX] = analogPins[controller::J2_VRX] = 0;
+  tick(start + 900);
+  CHECK(controller::SerialBT.direction == 'B');
+  CHECK(digitalPins[receiver::IN1] == HIGH && digitalPins[receiver::IN2] == LOW);
+  CHECK(digitalPins[receiver::IN3] == LOW && digitalPins[receiver::IN4] == HIGH);
   CHECK(receiver::clawServo.angle == receiver::CLAW_OPEN_DEG);
   return 0;
 }

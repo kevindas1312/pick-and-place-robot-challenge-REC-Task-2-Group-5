@@ -107,19 +107,17 @@ Each stick axis is evaluated on its own against the neutral window (`1000`-`3000
 
 ## Control fixes and verification
 
-The left motor now uses `IN1=HIGH`, `IN2=LOW` for forward, reversing the
-previous firmware setting to address the reported backward motion. Motor lead
-polarity and stick mounting still need a physical check: raise the wheels,
-push the left stick forward, and confirm that the controller prints `W` and
-the left wheel moves forward. If it prints `X`, check the joystick's mounting
-and raw X readings instead of changing motor wiring.
+After the breadboard wiring correction, both wheels were reported to run
+backwards for forward joystick commands. Both Nano polarity flags have been
+flipped relative to the previous firmware: `LEFT_MOTOR_REVERSED = true` and
+`RIGHT_MOTOR_REVERSED = false`. Forward now sets `IN1=LOW`, `IN2=HIGH` on
+the left and `IN3=HIGH`, `IN4=LOW` on the right; reverse uses opposite levels.
+These settings apply to individual-wheel commands, driving, steering and spins.
 
-The right motor now uses `RIGHT_MOTOR_REVERSED = true`: forward sets
-`IN3=LOW`, `IN4=HIGH`, and reverse sets the opposite levels. This addresses
-the subsequent report of inverted right-wheel motion without changing the
-working left motor. Verify that pushing the right stick forward prints `Y`
-and pulling it back prints `Z`. If forward instead prints `Z`, the right
-stick's axis orientation also needs checking; report its raw X readings.
+Upload the updated Nano sketch and raise the wheels for verification. With
+the other stick centred, left forward/back should print `W`/`X` on the ESP32,
+and right forward/back should print `Y`/`Z`; check that each wheel follows
+the requested direction. Then check both sticks forward and backward together.
 Bluetooth pairing, reconnect logic, frame format and send interval are unchanged.
 
 Claw buttons are sampled by a dedicated ESP32 task, targeting a 5 ms sampling
