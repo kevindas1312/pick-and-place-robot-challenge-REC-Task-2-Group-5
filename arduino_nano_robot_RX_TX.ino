@@ -39,7 +39,7 @@ const int motorSpeed = 100;
 // Turning: the inner wheel runs at this duty so the robot curves instead of
 // skidding in a circle. Keep it roughly 55-65 % of motorSpeed, or the inner
 // wheel may stall against friction and the "curve" becomes a pivot.
-const int turnSpeed = 90;
+const int turnSpeed = 65;
 
 // Claw servo angles
 const int CLAW_NEUTRAL_DEG = 90;
