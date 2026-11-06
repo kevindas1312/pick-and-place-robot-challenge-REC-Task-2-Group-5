@@ -22,7 +22,7 @@ const int ENB = 11; // PWM speed pin for Motor 2 (Right) - Timer2A
 // straight ahead. Any wheel travelling backwards is the reversed one.
 // Correct the reported left-wheel reversal with the current motor wiring.
 const bool LEFT_MOTOR_REVERSED  = false;
-const bool RIGHT_MOTOR_REVERSED = false;  // right wheel drives backwards -> true
+const bool RIGHT_MOTOR_REVERSED = true;   // correct reported right-wheel reversal
 
 // The pin levels that make each channel go FORWARD, derived from the flags
 // above. Everything else is written in terms of these, so a reversal is

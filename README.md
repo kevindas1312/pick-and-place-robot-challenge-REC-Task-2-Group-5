@@ -114,6 +114,14 @@ push the left stick forward, and confirm that the controller prints `W` and
 the left wheel moves forward. If it prints `X`, check the joystick's mounting
 and raw X readings instead of changing motor wiring.
 
+The right motor now uses `RIGHT_MOTOR_REVERSED = true`: forward sets
+`IN3=LOW`, `IN4=HIGH`, and reverse sets the opposite levels. This addresses
+the subsequent report of inverted right-wheel motion without changing the
+working left motor. Verify that pushing the right stick forward prints `Y`
+and pulling it back prints `Z`. If forward instead prints `Z`, the right
+stick's axis orientation also needs checking; report its raw X readings.
+Bluetooth pairing, reconnect logic, frame format and send interval are unchanged.
+
 Claw buttons are sampled continuously with a 20 ms debounce, independently
 of the 100 ms Bluetooth heartbeat. A press sets a remembered target: left
 opens, right closes, and releasing holds that target. A new press overrides
@@ -125,10 +133,39 @@ sampling examples in GUIDE.md.
 Run host regression checks with `python3 tests/run_tests.py` (requires `g++`,
 or set `CXX` to a C++ compiler). These execute both sketches with simulated
 Arduino I/O; they do not compile the board libraries or verify the hardware.
+The integration check passes the controller's formatted packet bytes into
+the Nano parser and checks the resulting servo angles and right motor outputs.
 
 After uploading **both** sketches, with the wheels raised, check left-only
-forward/reverse, both wheels forward/reverse, then tap left/right buttons
+and right-only forward/reverse, both wheels forward/reverse, then tap left/right buttons
 while stopped and driving. The claw should open/close and hold after release.
 If packets show `O`/`C` but the servo does not move, check its D9 signal,
 external 5 V supply, and common ground. Finally, turn off the controller
 while driving and confirm the wheels stop after the 500 ms link timeout.
+
+### Claw stays at its startup position
+
+The current software tests reproduce successful open/close commands; they
+do not establish the cause of a physical claw staying at 90 degrees.
+Use these checks to locate the failure before changing pins or angles:
+
+1. With both sticks centred, open the ESP32 Serial Monitor at **115200** baud.
+   Click the left stick down (its push-button, not its directional axis),
+   then release and click the right stick. Expect `Btn: PRESSED` on the
+   corresponding side and packets `SO` then `SC`. Hold each click for half
+   a second so its raw button state is visible in the monitor.
+2. If a button never shows `PRESSED`, check its `SW` connection to GPIO25
+   (left) or GPIO26 (right) and the joystick's common ground. Simultaneously
+   clicking both requests open; it is not an open/close toggle.
+3. If the controller sends `SO`/`SC`, temporarily enable `DEBUG_SERIAL` in
+   the Nano sketch, upload it, reconnect the HC-05 and inspect the Nano
+   monitor at **9600** baud. Check that the received claw byte is `O`/`C`.
+   Restore `DEBUG_SERIAL` to `0` after this stationary diagnostic.
+4. If the Nano receives the correct bytes but the claw remains at 90 degrees,
+   check the servo signal on D9, its external supply under load, common
+   ground, and whether the claw mechanism binds. Startup movement alone
+   does not verify that the servo can reach 160 or 20 degrees under load.
+
+Report the ESP32 button states/packets and Nano received bytes if the fault
+persists. The right-motor correction does not claim to resolve this
+unreproduced claw fault.
