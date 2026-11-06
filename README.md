@@ -104,3 +104,31 @@ Each stick axis is evaluated on its own against the neutral window (`1000`-`3000
 *   **Link failsafe:** if the Nano sees no valid frame for `LINK_TIMEOUT_MS` (500 ms), it stops the motors. A lost Bluetooth link can never leave the robot driving away.
 *   **Framing:** only newline-terminated two-byte payloads are executed, and unknown commands default to stop, so noise on the link cannot produce motion.
 *   **Tuning knobs** live at the top of each sketch: `motorSpeed` / `turnSpeed` (Nano), `AXIS_LOW` / `AXIS_HIGH` / `SEND_INTERVAL_MS` (ESP32). Set `DEBUG_SERIAL` to `1` in the Nano sketch to echo received frames - keep it `0` while driving.
+
+## Control fixes and verification
+
+The left motor now uses `IN1=HIGH`, `IN2=LOW` for forward, reversing the
+previous firmware setting to address the reported backward motion. Motor lead
+polarity and stick mounting still need a physical check: raise the wheels,
+push the left stick forward, and confirm that the controller prints `W` and
+the left wheel moves forward. If it prints `X`, check the joystick's mounting
+and raw X readings instead of changing motor wiring.
+
+Claw buttons are sampled continuously with a 20 ms debounce, independently
+of the 100 ms Bluetooth heartbeat. A press sets a remembered target: left
+opens, right closes, and releasing holds that target. A new press overrides
+a held button; simultaneous presses prefer open. The controller repeats the
+target in subsequent packets so one missed packet does not lose the command.
+`N` is sent until the first button press. This supersedes the older button
+sampling examples in GUIDE.md.
+
+Run host regression checks with `python3 tests/run_tests.py` (requires `g++`,
+or set `CXX` to a C++ compiler). These execute both sketches with simulated
+Arduino I/O; they do not compile the board libraries or verify the hardware.
+
+After uploading **both** sketches, with the wheels raised, check left-only
+forward/reverse, both wheels forward/reverse, then tap left/right buttons
+while stopped and driving. The claw should open/close and hold after release.
+If packets show `O`/`C` but the servo does not move, check its D9 signal,
+external 5 V supply, and common ground. Finally, turn off the controller
+while driving and confirm the wheels stop after the 500 ms link timeout.

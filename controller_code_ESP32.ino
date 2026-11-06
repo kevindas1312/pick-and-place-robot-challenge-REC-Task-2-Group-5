@@ -37,6 +37,37 @@ const int AXIS_HIGH = 3000;
 const unsigned long SEND_INTERVAL_MS      = 100;  // packet + heartbeat period
 const unsigned long RECONNECT_INTERVAL_MS = 2000; // BT retry period
 unsigned long lastConnectAttempt = 0;
+unsigned long lastSendMs = 0;
+const unsigned long BUTTON_DEBOUNCE_MS = 20;
+
+// Sample switches on every loop, independently of the packet timer. Remember
+// the requested position so a quick click is also sent in later heartbeats.
+struct ClawButton {
+  int pin;
+  bool rawPressed;
+  bool stablePressed;
+  unsigned long changedMs;
+};
+ClawButton openButton  = {J1_SW, false, false, 0};
+ClawButton closeButton = {J2_SW, false, false, 0};
+char clawTarget = 'N';
+
+// Keep the custom type visible to Arduino's sketch preprocessor.
+bool buttonPressed(ClawButton &button, unsigned long now);
+
+bool buttonPressed(ClawButton &button, unsigned long now) {
+  bool pressed = digitalRead(button.pin) == LOW;
+  if (pressed != button.rawPressed) {
+    button.rawPressed = pressed;
+    button.changedMs = now;
+  }
+  if (pressed != button.stablePressed &&
+      now - button.changedMs >= BUTTON_DEBOUNCE_MS) {
+    button.stablePressed = pressed;
+    return pressed; // One event per debounced press; release does not act.
+  }
+  return false;
+}
 
 inline bool pushedLow(int v)  { return v <  AXIS_LOW;  }
 inline bool pushedHigh(int v) { return v >  AXIS_HIGH; }
@@ -81,6 +112,14 @@ void attemptConnect() {
 }
 
 void loop() {
+  unsigned long now = millis();
+  bool openPressed = buttonPressed(openButton, now);
+  bool closePressed = buttonPressed(closeButton, now);
+  // Newest press wins, even while the other switch remains held. If both
+  // become pressed together, open takes priority.
+  if (openPressed) clawTarget = 'O';
+  else if (closePressed) clawTarget = 'C';
+
   // Keep the SPP link alive. Without this, a connect that fails at boot (HC-05
   // powered up later, out of range, module rebooted) leaves the controller
   // silently transmitting into the void and the robot dead on the floor.
@@ -90,6 +129,9 @@ void loop() {
     }
     return;
   }
+
+  if (now - lastSendMs < SEND_INTERVAL_MS) return;
+  lastSendMs = now;
 
   // Read analog axes (0 to 4095 on ESP32 12-bit ADC)
   int j1_x = analogRead(J1_VRX);
@@ -146,13 +188,8 @@ void loop() {
     dirText = "Steer Right";
   }
 
-  // Determine Claw Action from buttons
-  char claw = 'N'; // No change
-  if (j1_pressed) { 
-    claw = 'O';    // Open claw (Joystick 1 button)
-  } else if (j2_pressed) {
-    claw = 'C';    // Close claw (Joystick 2 button)
-  }
+  // Repeat the last requested position so a missed packet cannot lose a click.
+  char claw = clawTarget;
 
   // Print results matching your exact format + Direction Text + Packet Sent
   Serial.print("LEFT  [X: "); Serial.print(j1_x);
@@ -171,5 +208,4 @@ void loop() {
   // payload exactly two bytes so a partial read can never wedge the parser.
   SerialBT.printf("%c%c\n", direction, claw);
 
-  delay(SEND_INTERVAL_MS); // Send update every 100ms (also the robot's heartbeat)
 }
