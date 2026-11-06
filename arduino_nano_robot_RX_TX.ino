@@ -34,8 +34,8 @@ const int R_FWD_A = RIGHT_MOTOR_REVERSED ? LOW  : HIGH;   // IN3 when going forw
 const int R_FWD_B = RIGHT_MOTOR_REVERSED ? HIGH : LOW;    // IN4 when going forward
 
 // Motor Speed (0 - 255). Lower = slower and easier to control.
-// 150 is about 59 % duty. If the robot will not move at all, raise it; if it
-// still feels fast, try 120.
+// 100 is about 39.21 % duty. If the robot will not move at all, raise it; if it
+// still feels fast, try 80.
 const int motorSpeed = 100;
 
 // Turning: the inner wheel runs at this duty so the robot curves instead of
